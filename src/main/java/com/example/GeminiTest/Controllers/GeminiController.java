@@ -85,4 +85,11 @@ public class GeminiController {
         String result = geminiService.makeSimplier(sessionId, principal);
         return ResponseEntity.ok(result);
     }
+    @GetMapping("/sessions")
+    public ResponseEntity<List<ChatSessionDTO>> getUserSessions(Principal principal) {
+        List<ChatSessionDTO> sessions = geminiService.getUserSessions(principal);
+        return ResponseEntity.ok(sessions);
+    }
+
+
 }
