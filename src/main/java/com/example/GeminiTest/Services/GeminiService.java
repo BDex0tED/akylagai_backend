@@ -193,7 +193,6 @@ public class GeminiService {
 
         return response;
     }
-
     public List<MessageDTO> getHistory(Long sessionId, Principal principal) throws AccessDeniedException {
         ChatSession session = chatSessionRepository
                 .findByUserUsernameAndId(principal.getName(), sessionId)
@@ -205,7 +204,6 @@ public class GeminiService {
                 .map(m -> new MessageDTO(m.getChatSession().getId(), m.getRole(), m.getContent()))
                 .collect(Collectors.toList());
     }
-
     public String checkTest(Principal principal, CheckTestDTO dto) {
         ChatSession session = chatSessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new RuntimeException("Session not found"));
@@ -239,6 +237,43 @@ public class GeminiService {
         return response;
     }
 
+    public String makeSimplier(long sessionId, Principal principal) throws AccessDeniedException {
+        List<MessageDTO> userPrompt = getHistory(sessionId,principal);
+        if (userPrompt.isEmpty()) {
+            throw new IllegalStateException("История пуста, нет сообщений для обработки.");
+        }
+        MessageDTO lastMessage = userPrompt.get(userPrompt.size() - 1);
+        if (!"assistant".equalsIgnoreCase(lastMessage.getRole())) {
+            throw new IllegalStateException("Последнее сообщение не от ассистента.");
+        }
+        String prompt = lastMessage.getContent();
+
+        ChatSession session = chatSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        session.setUser(user);
+
+        ChatClient client = chatClientBuilder.build();
+
+        Message userMessage = new Message();
+        userMessage.setChatSession(session);
+        userMessage.setRole("user");
+        userMessage.setContent(prompt);
+        messageRepository.save(userMessage);
+
+        String geminiPrompt = """
+                %s, объясни проще. Без лишних слов""".formatted(prompt);
+        String response = client.prompt(geminiPrompt).call().content();
+        Message assistantMessage = new Message();
+        assistantMessage.setChatSession(session);
+        assistantMessage.setRole("assistant");
+        assistantMessage.setContent(response);
+        messageRepository.save(assistantMessage);
+        return response;
+
+
+
+    }
 }
 
 

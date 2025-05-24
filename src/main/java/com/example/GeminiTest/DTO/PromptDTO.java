@@ -8,4 +8,6 @@ public class PromptDTO {
     private String language;
     private String typeOfResponse;
     private String responseMode;
+    private Long sessionId;
+
 }

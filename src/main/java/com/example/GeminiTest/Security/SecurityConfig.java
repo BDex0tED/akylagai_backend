@@ -58,7 +58,8 @@ public class SecurityConfig {
                                 "/api/chat/checkAnswer",
                                 "api/chat/testUser",
                                 "/api/chat/preparationPlan",
-                                "/api/chat/history/"
+                                "/api/chat/history/",
+                                "/api/chat/makeSimplier"
                         ).authenticated()
                         .anyRequest().authenticated()
                 )

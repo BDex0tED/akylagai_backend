@@ -6,6 +6,6 @@ import java.util.List;
 
 @Data
 public class CheckTestDTO {
-    private long sessionId;
+    private Long sessionId;
     private List<QuestionCheckTestDTO> testList;
 }

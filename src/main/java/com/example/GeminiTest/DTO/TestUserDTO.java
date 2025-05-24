@@ -8,4 +8,6 @@ public class TestUserDTO {
     private String language;
     private String questionsNum;
     private String difficulty;
+    private Long sessionId;
+
 }
