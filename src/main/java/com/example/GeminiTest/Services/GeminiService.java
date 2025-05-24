@@ -236,7 +236,6 @@ public class GeminiService {
 
         return response;
     }
-
     public String makeSimplier(long sessionId, Principal principal) throws AccessDeniedException {
         List<MessageDTO> userPrompt = getHistory(sessionId,principal);
         if (userPrompt.isEmpty()) {
@@ -270,10 +269,19 @@ public class GeminiService {
         assistantMessage.setContent(response);
         messageRepository.save(assistantMessage);
         return response;
-
-
-
     }
+    public List<ChatSessionDTO> getUserSessions(Principal principal) {
+        String username = principal.getName();
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<ChatSession> sessions = chatSessionRepository.findAllByUser(user);
+
+        return sessions.stream()
+                .map(session -> new ChatSessionDTO(session.getId(), session.getTitle()))
+                .toList();
+    }
+
 }
 
 

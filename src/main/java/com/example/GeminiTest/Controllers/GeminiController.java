@@ -79,7 +79,6 @@ public class GeminiController {
         String result = geminiService.checkTest(principal, checkTestDTO);
         return ResponseEntity.ok(result);
     }
-
     @PostMapping("/makeSimplier")
     public ResponseEntity<String> makeSimplier(@RequestParam("sessionId") long sessionId, Principal principal) throws AccessDeniedException {
         String result = geminiService.makeSimplier(sessionId, principal);
