@@ -51,14 +51,14 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/",
-                                "/api/chat/gethistory"
+                                "/"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/chat/ask",
                                 "/api/chat/checkAnswer",
                                 "api/chat/testUser",
-                                "/api/chat/preparationPlan"
+                                "/api/chat/preparationPlan",
+                                "/api/chat/history/"
                         ).authenticated()
                         .anyRequest().authenticated()
                 )

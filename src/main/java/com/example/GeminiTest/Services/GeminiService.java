@@ -1,6 +1,8 @@
 package com.example.GeminiTest.Services;
 
 import com.example.GeminiTest.DTO.*;
+import com.example.GeminiTest.DTO.CheckingTestDTO.CheckTestDTO;
+import com.example.GeminiTest.DTO.CheckingTestDTO.QuestionCheckTestDTO;
 import com.example.GeminiTest.Models.ChatSession;
 import com.example.GeminiTest.Models.Message;
 import com.example.GeminiTest.Repos.ChatSessionRepo;
@@ -9,8 +11,10 @@ import com.example.GeminiTest.Security.Repositories.UserRepository;
 import com.example.GeminiTest.Security.UserPackage.UserEntity;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +44,6 @@ public class GeminiService {
         return session.getId();
     }
 
-    // Обработка запроса с привязкой к сессии
     public String getAnswer(Principal principal,Long sessionId, PromptDTO promptDTO) {
         ChatSession session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
@@ -81,8 +84,10 @@ public class GeminiService {
 
         return response;
     }
-    public String checkUserAnswer(Long sessionId, CheckDTO checkDTO) {
+    public String checkUserAnswer(Principal principal,Long sessionId, CheckDTO checkDTO) {
         ChatSession session = chatSessionRepository.findById(sessionId).orElseThrow(() -> new RuntimeException("Session not found"));
+        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        session.setUser(user);
 
         Message userMessage = new Message();
         userMessage.setChatSession(session);
@@ -91,13 +96,12 @@ public class GeminiService {
         ChatClient client = chatClientBuilder.build();
         String promptString = """
         Определи школьный предмет вопроса, затем проверь мой ответ.
-        Вопрос:%s
-        Ответ:%s
+        Вопрос: %s
+        Ответ: %s
         Язык ответа: %s
-""".formatted(checkDTO.getUserAnswer(), checkDTO.getUserQuestion(), checkDTO.getLanguage());
+""".formatted(checkDTO.getUserQuestion(), checkDTO.getUserAnswer(), checkDTO.getLanguage());
 
         String userPrompt = """
-                %s
                 %s
                 %s
                 %s
@@ -115,8 +119,10 @@ public class GeminiService {
 
         return response;
     }
-    public String testUserByQuestions(Long sessionId, TestUserDTO testUserDTO){
+    public String testUserByQuestions(Principal principal, Long sessionId, TestUserDTO testUserDTO){
         ChatSession session = chatSessionRepository.findById(sessionId).orElseThrow(() -> new RuntimeException("Session not found"));
+        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        session.setUser(user);
 
         Message userMessage = new Message();
         userMessage.setChatSession(session);
@@ -153,8 +159,11 @@ public class GeminiService {
 
         return response;
     }
-    public String preparationPlan(Long SessionId, PreparationPlanDTO preparationPlanDTO) {
+    public String preparationPlan(Principal principal, Long SessionId, PreparationPlanDTO preparationPlanDTO) {
         ChatSession session = chatSessionRepository.findById(SessionId).orElseThrow(() -> new RuntimeException("Session not found"));
+        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        session.setUser(user);
+
         Message userMessage = new Message();
         userMessage.setChatSession(session);
         userMessage.setRole("user");
@@ -163,13 +172,11 @@ public class GeminiService {
         String promptString = """
                 Определи школьный предмет вопроса: %s, а затем составь план подготовки
                 чтобы прям хорошо знать эту тему.
-                Дополнительные пожелания:%s
+                Дополнительные пожелания: %s
                 Язык ответа: %s
                """.formatted(preparationPlanDTO.getTopic(), preparationPlanDTO.getPrompt(), preparationPlanDTO.getLanguage());
 
         String userPrompt = """
-                %s
-                %s
                 %s
                 %s
                 """.formatted(preparationPlanDTO.getTopic(), preparationPlanDTO.getPrompt());
@@ -187,12 +194,51 @@ public class GeminiService {
         return response;
     }
 
-    public List<MessageDTO> getHistory(Long sessionId) {
-        List<Message> messages = messageRepository.findByChatSessionIdOrderByTimestampAsc(sessionId);
+    public List<MessageDTO> getHistory(Long sessionId, Principal principal) throws AccessDeniedException {
+        ChatSession session = chatSessionRepository
+                .findByUserUsernameAndId(principal.getName(), sessionId)
+                .orElseThrow(() -> new AccessDeniedException("You don't have access to this session"));
+
+        List<Message> messages = messageRepository.findByChatSessionIdOrderByTimestampAsc(session.getId());
+
         return messages.stream()
                 .map(m -> new MessageDTO(m.getChatSession().getId(), m.getRole(), m.getContent()))
                 .collect(Collectors.toList());
     }
+
+    public String checkTest(Principal principal, CheckTestDTO dto) {
+        ChatSession session = chatSessionRepository.findById(dto.getSessionId())
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        session.setUser(user);
+
+        StringBuilder promptBuilder = new StringBuilder("Проверь ответы пользователя на следующие вопросы:\n");
+
+        for (QuestionCheckTestDTO qa : dto.getTestList()) {
+            promptBuilder.append("Вопрос: ").append(qa.getQuestion()).append("\n");
+            promptBuilder.append("Ответ пользователя: ").append(qa.getAnswer()).append("\n\n");
+        }
+
+        promptBuilder.append("Дай корректность каждого ответа и пояснение, если нужно.");
+
+        Message userMessage = new Message();
+        userMessage.setChatSession(session);
+        userMessage.setRole("user");
+        userMessage.setContent(promptBuilder.toString());
+        messageRepository.save(userMessage);
+
+        ChatClient client = chatClientBuilder.build();
+        String response = client.prompt(promptBuilder.toString()).call().content();
+
+        Message assistantMessage = new Message();
+        assistantMessage.setChatSession(session);
+        assistantMessage.setRole("assistant");
+        assistantMessage.setContent(response);
+        messageRepository.save(assistantMessage);
+
+        return response;
+    }
+
 }
 
 

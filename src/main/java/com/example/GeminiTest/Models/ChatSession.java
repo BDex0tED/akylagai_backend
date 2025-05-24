@@ -18,7 +18,7 @@ public class ChatSession {
     private String title;
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserEntity user;
 

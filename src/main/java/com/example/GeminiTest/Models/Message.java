@@ -16,7 +16,7 @@ public class Message {
     private ChatSession chatSession;
 
     private String role;
-    @Column(length = 4000)
+    @Column(length = 6000)
     private String content;
     private LocalDateTime timestamp = LocalDateTime.now();
 
