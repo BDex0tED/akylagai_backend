@@ -6,4 +6,5 @@ import lombok.Data;
 public class PreparationPlanDTO {
     private String topic;
     private String prompt;
+    private String language;
 }

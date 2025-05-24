@@ -1,5 +1,6 @@
 package com.example.GeminiTest.Security.UserPackage;
 
+import com.example.GeminiTest.Models.ChatSession;
 import com.example.GeminiTest.Security.Role;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -24,6 +25,9 @@ public class UserEntity {
     private String username;
     private String password;
     private String email;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ChatSession> chatSessions = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
