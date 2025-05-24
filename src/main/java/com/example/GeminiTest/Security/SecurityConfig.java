@@ -53,6 +53,12 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/"
                         ).permitAll()
+                        .requestMatchers(
+                                "/api/chat/ask",
+                                "/api/chat/checkAnswer",
+                                "api/chat/testUser",
+                                "/api/chat/preparationPlan"
+                        ).authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic();
