@@ -204,38 +204,38 @@ public class GeminiService {
                 .map(m -> new MessageDTO(m.getChatSession().getId(), m.getRole(), m.getContent()))
                 .collect(Collectors.toList());
     }
-    public String checkTest(Principal principal, CheckTestDTO dto) {
-        ChatSession session = chatSessionRepository.findById(dto.getSessionId())
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
-        session.setUser(user);
-
-        StringBuilder promptBuilder = new StringBuilder("Проверь ответы пользователя на следующие вопросы:\n");
-
-        for (QuestionCheckTestDTO qa : dto.getTestList()) {
-            promptBuilder.append("Вопрос: ").append(qa.getQuestion()).append("\n");
-            promptBuilder.append("Ответ пользователя: ").append(qa.getAnswer()).append("\n\n");
-        }
-
-        promptBuilder.append("Дай корректность каждого ответа и пояснение, если нужно.");
-
-        Message userMessage = new Message();
-        userMessage.setChatSession(session);
-        userMessage.setRole("user");
-        userMessage.setContent(promptBuilder.toString());
-        messageRepository.save(userMessage);
-
-        ChatClient client = chatClientBuilder.build();
-        String response = client.prompt(promptBuilder.toString()).call().content();
-
-        Message assistantMessage = new Message();
-        assistantMessage.setChatSession(session);
-        assistantMessage.setRole("assistant");
-        assistantMessage.setContent(response);
-        messageRepository.save(assistantMessage);
-
-        return response;
-    }
+//    public String checkTest(Principal principal, CheckTestDTO dto) {
+//        ChatSession session = chatSessionRepository.findById(dto.getSessionId())
+//                .orElseThrow(() -> new RuntimeException("Session not found"));
+//        UserEntity user = userRepository.findByUsername(principal.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+//        session.setUser(user);
+//
+//        StringBuilder promptBuilder = new StringBuilder("Проверь ответы пользователя на следующие вопросы:\n");
+//
+//        for (QuestionCheckTestDTO qa : dto.getTestList()) {
+//            promptBuilder.append("Вопрос: ").append(qa.getQuestion()).append("\n");
+//            promptBuilder.append("Ответ пользователя: ").append(qa.getAnswer()).append("\n\n");
+//        }
+//
+//        promptBuilder.append("Дай корректность каждого ответа и пояснение, если нужно.");
+//
+//        Message userMessage = new Message();
+//        userMessage.setChatSession(session);
+//        userMessage.setRole("user");
+//        userMessage.setContent(promptBuilder.toString());
+//        messageRepository.save(userMessage);
+//
+//        ChatClient client = chatClientBuilder.build();
+//        String response = client.prompt(promptBuilder.toString()).call().content();
+//
+//        Message assistantMessage = new Message();
+//        assistantMessage.setChatSession(session);
+//        assistantMessage.setRole("assistant");
+//        assistantMessage.setContent(response);
+//        messageRepository.save(assistantMessage);
+//
+//        return response;
+//    }
     public String makeSimplier(long sessionId, Principal principal) throws AccessDeniedException {
         List<MessageDTO> userPrompt = getHistory(sessionId,principal);
         if (userPrompt.isEmpty()) {

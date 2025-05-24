@@ -69,16 +69,6 @@ public class GeminiController {
         List<MessageDTO> history = geminiService.getHistory(sessionId, principal);
         return ResponseEntity.ok(history);
     }
-
-    @PostMapping("/checkTest")
-    public ResponseEntity<String> checkTest(@RequestBody CheckTestDTO checkTestDTO, Principal principal) {
-        Long sessionId = (checkTestDTO.getSessionId() != null)
-                ? checkTestDTO.getSessionId()
-                : geminiService.createSession("Проверка теста");
-
-        String result = geminiService.checkTest(principal, checkTestDTO);
-        return ResponseEntity.ok(result);
-    }
     @PostMapping("/makeSimplier")
     public ResponseEntity<String> makeSimplier(@RequestParam("sessionId") long sessionId, Principal principal) throws AccessDeniedException {
         String result = geminiService.makeSimplier(sessionId, principal);
